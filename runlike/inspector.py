@@ -265,7 +265,9 @@ class Inspector(object):
         entrypoints = self.get_container_fact("Config.Entrypoint") or []
         image_entrypoints = self.get_image_fact("Config.Entrypoint") or []
         if len(entrypoints) > 0 and entrypoints != image_entrypoints:
-            self.options.append("--entrypoint %s" % entrypoints[0])
+            self.options.append("--entrypoint %s" % quote(entrypoints[0]))
+            return entrypoints[1:]
+        return []
 
     def format_cli(self):
         image = self.get_container_fact("Config.Image")
@@ -280,7 +282,7 @@ class Inspector(object):
         self.parse_ipv6()
         self.parse_pid()
         self.parse_cpuset()
-        self.parse_entrypoint()
+        entrypoint_args = self.parse_entrypoint()
 
         self.parse_volumes()
 
@@ -325,7 +327,7 @@ class Inspector(object):
             parameters += self.options
         parameters.append(image)
 
-        cmd_parts = self.get_container_fact("Config.Cmd")
+        cmd_parts = entrypoint_args + (self.get_container_fact("Config.Cmd") or [])
 
         if cmd_parts:
             # NOTE: pipes.quote() performs syntactically correct
